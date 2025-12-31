@@ -476,7 +476,9 @@
                 if (!countryCode && data && data.sub_id) {
                     // Sometimes sub_id might be used for testing country? Unlikely but fallback
                 }
-
+                if (data._metadata.event_type) {
+                    eventName = data._metadata.event_type;
+                }
                 addEventToList(`Event: <b>${eventName}</b> ${countryCode ? `(${countryCode})` : ''}`, eventName);
 
                 if (countryCode) {
