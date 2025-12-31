@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Tester - The Dog API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen p-8 font-sans">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-3xl font-bold text-orange-500">WebSocket Tester</h1>
+            <p class="text-gray-400 mt-2">Connect to the Dog API Realtime Gateway</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Configuration Panel -->
+            <div class="md:col-span-1 bg-gray-800 p-6 rounded-lg shadow-lg h-fit">
+                <h2 class="text-xl font-semibold mb-4 text-orange-400">Connection Settings</h2>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">WebSocket URL</label>
+                    <input type="text" id="wsUrl" value="https://staging-api.thedogapi.com"
+                        class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-500 transition-colors">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-400 mb-1">API Key (x-api-key)</label>
+                    <input type="text" id="apiKey" placeholder="Enter your API Key"
+                        class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-500 transition-colors">
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="connect()" id="connectBtn"
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                        Connect
+                    </button>
+                    <button onclick="disconnect()" id="disconnectBtn"
+                        class="w-full bg-red-800 hover:bg-red-900 text-gray-300 font-bold py-2 px-4 rounded transition-colors hidden">
+                        Disconnect
+                    </button>
+                    <button onclick="clearLogs()"
+                        class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2 px-4 rounded transition-colors">
+                        Clear Logs
+                    </button>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Status</h3>
+                    <div id="statusIndicator" class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></span>
+                        <span id="statusText" class="text-gray-400 font-mono text-sm">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Panel -->
+            <div class="md:col-span-2 bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col h-[600px]">
+                <h2 class="text-xl font-semibold mb-4 text-orange-400 flex justify-between items-center">
+                    <span>Event Log</span>
+                    <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">Live</span>
+                </h2>
+                <div id="logs"
+                    class="flex-1 bg-gray-900 rounded border border-gray-700 p-4 overflow-y-auto font-mono text-sm space-y-2">
+                    <div class="text-gray-500 italic">Waiting for connection...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        const wsUrlInput = document.getElementById('wsUrl');
+        const apiKeyInput = document.getElementById('apiKey');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const statusText = document.getElementById('statusText');
+        const statusIndicator = document.querySelector('#statusIndicator span');
+        const logsContainer = document.getElementById('logs');
+
+        // Load saved values
+        if (localStorage.getItem('ws_url')) wsUrlInput.value = localStorage.getItem('ws_url');
+        if (localStorage.getItem('ws_api_key')) apiKeyInput.value = localStorage.getItem('ws_api_key');
+
+        function log(message, type = 'info', data = null) {
+            const entry = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+
+            let colorClass = 'text-gray-300';
+            if (type === 'error') colorClass = 'text-red-400';
+            if (type === 'success') colorClass = 'text-green-400';
+            if (type === 'event') colorClass = 'text-blue-400';
+
+            let content = `<span class="text-gray-600">[${timestamp}]</span> <span class="${colorClass}">${message}</span>`;
+
+            if (data) {
+                content += `<pre class="mt-1 ml-6 text-xs text-gray-500 bg-gray-800 p-2 rounded overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            entry.innerHTML = content;
+            entry.className = "border-b border-gray-800 pb-1";
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function updateStatus(status, color) {
+            statusText.innerText = status;
+            statusIndicator.className = `w-3 h-3 rounded-full bg-${color}-500 ${status === 'Connecting...' ? 'animate-pulse' : ''}`;
+
+            if (status === 'Connected') {
+                connectBtn.classList.add('hidden');
+                disconnectBtn.classList.remove('hidden');
+            } else {
+                connectBtn.classList.remove('hidden');
+                disconnectBtn.classList.add('hidden');
+            }
+        }
+
+        function clearLogs() {
+            logsContainer.innerHTML = '';
+        }
+
+        function connect() {
+            const url = wsUrlInput.value;
+            const apiKey = apiKeyInput.value;
+
+            if (!url || !apiKey) {
+                log('Please provide URL and API Key', 'error');
+                return;
+            }
+
+            // Save for convenience
+            localStorage.setItem('ws_url', url);
+            localStorage.setItem('ws_api_key', apiKey);
+
+            if (socket) {
+                socket.disconnect();
+            }
+
+            log(`Connecting to ${url}...`);
+            updateStatus('Connecting...', 'yellow');
+
+            socket = io(url, {
+                transports: ['websocket'], // Force websocket as per requirement
+                auth: {
+                    'x-api-key': apiKey
+                },
+                // Also sending in headers for compatibility with different server setups
+                extraHeaders: {
+                    'x-api-key': apiKey
+                }
+            });
+
+            socket.on('connect', () => {
+                log('Connected successfully (Transport: ' + socket.io.engine.transport.name + ')', 'success');
+                updateStatus('Connected', 'green');
+            });
+
+            socket.on('connect_error', (err) => {
+                log('Connection Failed: ' + err.message, 'error');
+                updateStatus('Error', 'red');
+            });
+
+            socket.on('disconnect', (reason) => {
+                log('Disconnected: ' + reason, 'info');
+                updateStatus('Disconnected', 'gray');
+            });
+
+            // Listen for any event
+            socket.onAny((eventName, ...args) => {
+                log(`Received Event: ${eventName}`, 'event', args[0]);
+            });
+
+            socket.on('exception', (data) => {
+                log('Exception received', 'error', data);
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                log('Manually disconnected');
+            }
+        }
+    </script>
+</body>
+
+</html>
