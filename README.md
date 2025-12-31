@@ -2,6 +2,11 @@
 
 This project demonstrates how to connect to the **The Dog API / The Cat API** WebSocket Realtime Gateway to visualize API events (votes, favourites, uploads) as they happen across the world.
 
+## Live links to test
+
+- Map: https://live-staging.thedogapi.com/map-events.html
+- Favourite or Vote Up/Don images to see them live on the above Map: https://staging.thedogapi.com/en/students
+
 ## 📂 Project Structure
 
 - **`index.html`**  
