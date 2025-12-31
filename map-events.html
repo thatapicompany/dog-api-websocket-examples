@@ -59,7 +59,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-400 mb-1">API Key</label>
-                            <input type="password" id="apiKey" placeholder="x-api-key"
+                            <input type="text" id="apiKey" placeholder="x-api-key"
                                 class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
                         </div>
                         <!-- Attach Image Toggle -->
@@ -351,6 +351,7 @@
 
         // --- Socket Logic ---
         let socket;
+        let popupTimer = null;
         const wsUrlInput = document.getElementById('wsUrl');
         const apiKeyInput = document.getElementById('apiKey');
         const attachImageInput = document.getElementById('attachImage');
@@ -432,9 +433,14 @@
                 <div class="text-xs text-gray-500 mt-1">${new Date().toLocaleTimeString()}</div>
             `;
 
+            if (popupTimer) {
+                clearTimeout(popupTimer);
+                popupTimer = null;
+            }
+
             L.popup({
                 closeButton: false,
-                autoClose: false,
+                // autoClose: false, // Removed to allow default behavior (closing other popups)
                 closeOnClick: false,
                 className: 'custom-popup'
             })
@@ -443,8 +449,9 @@
                 .openOn(map);
 
             // Auto close after 5 seconds to allow seeing the image
-            setTimeout(() => {
+            popupTimer = setTimeout(() => {
                 map.closePopup();
+                popupTimer = null;
             }, 5000);
         }
 
