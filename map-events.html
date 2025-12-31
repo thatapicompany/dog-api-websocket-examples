@@ -64,7 +64,7 @@
                         </div>
                         <!-- Attach Image Toggle -->
                         <div class="flex items-center space-x-2 py-2">
-                            <input type="checkbox" id="attachImage"
+                            <input type="checkbox" id="attachImage" checked
                                 class="w-4 h-4 text-orange-600 bg-gray-700 border-gray-600 rounded focus:ring-orange-500">
                             <label for="attachImage" class="text-sm font-medium text-gray-300">Attach Image
                                 Details</label>
@@ -503,7 +503,14 @@
                 let countryCode = null;
                 let hasImage = false;
 
-                if (data && data.country_code) countryCode = data.country_code;
+                if (data && data._metadata.country_code) countryCode = data._metadata.country_code;
+                if (!countryCode && data && data.sub_id) {
+                    // Sometimes sub_id might be used for testing country? Unlikely but fallback
+                }
+                if (data._metadata.event_type) {
+                    eventName = data._metadata.event_type;
+                }
+
                 if (!countryCode && data && data.sub_id) { }
 
                 if (data && data.image) {
