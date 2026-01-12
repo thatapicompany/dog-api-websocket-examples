@@ -33,7 +33,7 @@ The API provides a real-time stream of user interactions. You can use this to bu
 ```html
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const socket = io('https://staging-api.thedogapi.com', {
+    const socket = io('https://api.thedogapi.com', {
         transports: ['websocket'], // ⚠️ IMPORTANT: Force websocket transport
         auth: {
             'x-api-key': 'YOUR_API_KEY', // Get one for free at thedogapi.com
@@ -83,4 +83,4 @@ The API provides a real-time stream of user interactions. You can use this to bu
 ### Reference
 
 For full API documentation, endpoints, and schema details, please refer to the OpenAPI Specification:
-[http://staging-api.thedogapi.com/openapi-json](http://staging-api.thedogapi.com/openapi-json)
+[http://api.thedogapi.com/openapi-json](http://api.thedogapi.com/openapi-json)
