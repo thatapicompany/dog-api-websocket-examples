@@ -58,6 +58,11 @@
                                 class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
                         </div>
                         <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">REST API URL</label>
+                            <input type="text" id="apiUrl" value="https://api.thedogapi.com/v1"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
+                        </div>
+                        <div>
                             <label class="block text-xs font-medium text-gray-400 mb-1">API Key</label>
                             <input type="text" id="apiKey" placeholder="x-api-key"
                                 class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
@@ -80,6 +85,23 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Trigger Event Panel -->
+                <div class="bg-gray-800 p-5 rounded-lg shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3 text-orange-400">Simulate Events</h2>
+                    <p class="text-xs text-gray-400 mb-3">Trigger a real API event by fetching a random image and
+                        creating an upvote.</p>
+                    <button onclick="triggerFakeEvent()" id="triggerEventBtn"
+                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-4 rounded text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span>Trigger Vote Event</span>
+                    </button>
+                    <div id="triggerStatus" class="mt-3 text-xs text-gray-400 hidden"></div>
                 </div>
 
                 <div class="bg-gray-800 p-5 rounded-lg shadow-lg">
@@ -353,16 +375,20 @@
         let socket;
         let popupTimer = null;
         const wsUrlInput = document.getElementById('wsUrl');
+        const apiUrlInput = document.getElementById('apiUrl');
         const apiKeyInput = document.getElementById('apiKey');
         const attachImageInput = document.getElementById('attachImage');
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
+        const triggerEventBtn = document.getElementById('triggerEventBtn');
+        const triggerStatus = document.getElementById('triggerStatus');
         const statusText = document.getElementById('statusText');
         const statusIndicator = document.querySelector('#statusIndicator span');
         const eventList = document.getElementById('eventList');
 
         // Load saved values
         if (localStorage.getItem('ws_url')) wsUrlInput.value = localStorage.getItem('ws_url');
+        if (localStorage.getItem('api_url')) apiUrlInput.value = localStorage.getItem('api_url');
 
         const savedKey = localStorage.getItem('ws_api_key');
         if (savedKey) {
@@ -383,12 +409,14 @@
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
                 wsUrlInput.disabled = true;
+                apiUrlInput.disabled = true;
                 apiKeyInput.disabled = true;
                 attachImageInput.disabled = true;
             } else {
                 connectBtn.classList.remove('hidden');
                 disconnectBtn.classList.add('hidden');
                 wsUrlInput.disabled = false;
+                apiUrlInput.disabled = false;
                 apiKeyInput.disabled = false;
                 attachImageInput.disabled = false;
             }
@@ -471,6 +499,7 @@
             }
 
             localStorage.setItem('ws_url', url);
+            localStorage.setItem('api_url', apiUrlInput.value);
             localStorage.setItem('ws_api_key', apiKey);
             localStorage.setItem('ws_attach_image', attachImage);
 
@@ -540,6 +569,82 @@
         function disconnect() {
             if (socket) socket.disconnect();
         }
+
+        // --- Trigger Fake Event ---
+        async function triggerFakeEvent() {
+            const apiUrl = apiUrlInput.value.replace(/\/$/, ''); // Remove trailing slash
+            const apiKey = apiKeyInput.value || 'DEMO-API-KEY';
+
+            triggerEventBtn.disabled = true;
+            triggerStatus.classList.remove('hidden');
+            triggerStatus.innerHTML = '<span class="text-yellow-400">⏳ Fetching random image...</span>';
+
+            try {
+                // Step 1: Get a random image from /images/search
+                const imageResponse = await fetch(`${apiUrl}/images/search?limit=1`, {
+                    headers: {
+                        'x-api-key': apiKey
+                    }
+                });
+
+                if (!imageResponse.ok) {
+                    throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
+                }
+
+                const images = await imageResponse.json();
+
+                if (!images || images.length === 0) {
+                    throw new Error('No images returned from search');
+                }
+
+                const imageId = images[0].id;
+                triggerStatus.innerHTML = `<span class="text-blue-400">📷 Got image: ${imageId}. Creating vote...</span>`;
+
+                // Step 2: Create an upvote for the image via POST /votes
+                const voteResponse = await fetch(`${apiUrl}/votes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        image_id: imageId,
+                        value: 1, // Upvote
+                        sub_id: 'map-events-demo'
+                    })
+                });
+
+                if (!voteResponse.ok) {
+                    const errorText = await voteResponse.text();
+                    throw new Error(`Failed to create vote: ${voteResponse.status} - ${errorText}`);
+                }
+
+                const vote = await voteResponse.json();
+                triggerStatus.innerHTML = `<span class="text-green-400">✅ Vote created! ID: ${vote.id || 'success'}</span>`;
+
+                // Add to local event list
+                addEventToList(`Triggered vote for image: <b>${imageId}</b>`, 'vote', true);
+
+            } catch (error) {
+                console.error('Trigger event error:', error);
+                triggerStatus.innerHTML = `<span class="text-red-400">❌ Error: ${error.message}</span>`;
+                addEventToList(`Trigger failed: ${error.message}`, 'info', false);
+            } finally {
+                triggerEventBtn.disabled = false;
+                // Hide status after 5 seconds
+                setTimeout(() => {
+                    triggerStatus.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // --- Auto-connect on page load ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Small delay to ensure everything is loaded
+            setTimeout(() => {
+                connect();
+            }, 500);
+        });
     </script>
 </body>
 

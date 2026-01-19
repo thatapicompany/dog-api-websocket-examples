@@ -4,8 +4,8 @@ This project demonstrates how to connect to the **The Dog API / The Cat API** We
 
 ## Live links to test
 
-- Map: https://live-staging.thedogapi.com/map-events.html
-- Favourite or Vote Up/Don images to see them live on the above Map: https://staging.thedogapi.com/en/students
+- Map: https://live.thedogapi.com/map-events.html
+- Favourite or Vote Up/Don images to see them live on the above Map: https://thedogapi.com/en/students
 
 ## 📂 Project Structure
 
@@ -24,7 +24,7 @@ The API provides a real-time stream of user interactions. You can use this to bu
 
 ### Connection Details
 
-- **WebSocket URL**: `https://staging-api.thedogapi.com` or `https://api.thedogapi.com` (Production)
+- **WebSocket URL**: `https://api.thedogapi.com` (Production)
 - **Transport**: `websocket` (Mandatory: Long-polling is disabled on serverless infrastructure)
 - **Auth**: Pass your API Key via the `x-api-key` header (handshake or extraHeaders).
 
