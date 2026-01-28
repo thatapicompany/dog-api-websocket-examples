@@ -15,8 +15,20 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
         #map {
-            height: 600px;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
         }
 
         .leaflet-popup-content-wrapper {
@@ -30,99 +42,22 @@
     </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100 min-h-screen p-4 font-sans">
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-6 flex justify-between items-center bg-gray-800 p-4 rounded-lg shadow-lg">
-            <div>
-                <h1 class="text-2xl font-bold text-orange-500">Live Event Map</h1>
-                <p class="text-gray-400 text-sm">Real-time geolocation of API events for the Account matching the API
-                    Key</p>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div id="statusIndicator"
-                    class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
-                    <span class="w-2 h-2 rounded-full bg-gray-500"></span>
-                    <span id="statusText" class="text-xs text-gray-400 font-mono uppercase">Disconnected</span>
-                </div>
-            </div>
-        </header>
+<body class="bg-gray-900 text-gray-100 font-sans">
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- Settings Panel -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-gray-800 p-5 rounded-lg shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-orange-400">Connection</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1">WebSocket URL</label>
-                            <input type="text" id="wsUrl" value="https://pro-api.thedogapi.com"
-                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1">REST API URL</label>
-                            <input type="text" id="apiUrl" value="https://api.thedogapi.com/v1"
-                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 mb-1">API Key</label>
-                            <input type="text" id="apiKey" placeholder="x-api-key"
-                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors">
-                        </div>
-                        <!-- Attach Image Toggle -->
-                        <div class="flex items-center space-x-2 py-2">
-                            <input type="checkbox" id="attachImage" checked
-                                class="w-4 h-4 text-orange-600 bg-gray-700 border-gray-600 rounded focus:ring-orange-500">
-                            <label for="attachImage" class="text-sm font-medium text-gray-300">Attach Image
-                                Details</label>
-                        </div>
-                        <div class="flex space-x-2 pt-2">
-                            <button onclick="connect()" id="connectBtn"
-                                class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-sm transition-colors">
-                                Connect
-                            </button>
-                            <button onclick="disconnect()" id="disconnectBtn"
-                                class="flex-1 bg-red-800 hover:bg-red-900 text-gray-300 font-bold py-2 px-4 rounded text-sm transition-colors hidden">
-                                Disconnect
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Trigger Event Panel -->
-                <div class="bg-gray-800 p-5 rounded-lg shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-orange-400">Simulate Events</h2>
-                    <p class="text-xs text-gray-400 mb-3">Trigger a real API event by fetching a random image and
-                        creating an upvote.</p>
-                    <button onclick="triggerFakeEvent()" id="triggerEventBtn"
-                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-4 rounded text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span>Trigger Vote Event</span>
-                    </button>
-                    <div id="triggerStatus" class="mt-3 text-xs text-gray-400 hidden"></div>
-                </div>
-
-                <div class="bg-gray-800 p-5 rounded-lg shadow-lg">
-                    <h2 class="text-lg font-semibold mb-3 text-orange-400">Recent Events</h2>
-                    <div id="eventList" class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                        <div class="text-xs text-gray-500 italic text-center py-4">Waiting for events...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Map Panel -->
-            <div class="lg:col-span-3 bg-gray-800 p-2 rounded-lg shadow-lg">
-                <div id="map" class="w-full rounded bg-gray-900 z-0"></div>
-            </div>
+    <!-- Status Indicator (Top Right) -->
+    <div
+        class="absolute top-4 right-4 z-[1000] bg-gray-800/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-gray-700 flex items-center space-x-3">
+        <div id="statusIndicator" class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-gray-500"></span>
+            <span id="statusText" class="text-sm text-gray-300 font-mono uppercase tracking-wider">Disconnected</span>
         </div>
     </div>
 
+    <!-- Map Container -->
+    <div id="map"></div>
+
     <script>
         // --- Country Centroids (ISO 3166-1 alpha-2) ---
-        // Source: A simplified subset. You should expand this list for full coverage.
         const countryCentroids = {
             "AF": [33.93911, 67.709953],
             "AL": [41.153332, 20.168331],
@@ -375,78 +310,17 @@
         // --- Socket Logic ---
         let socket;
         let popupTimer = null;
-        const wsUrlInput = document.getElementById('wsUrl');
-        const apiUrlInput = document.getElementById('apiUrl');
-        const apiKeyInput = document.getElementById('apiKey');
-        const attachImageInput = document.getElementById('attachImage');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const triggerEventBtn = document.getElementById('triggerEventBtn');
-        const triggerStatus = document.getElementById('triggerStatus');
-        const statusText = document.getElementById('statusText');
+
+        const wsUrl = "https://pro-api.thedogapi.com";
+        const apiKey = "DEMO-API-KEY";
+        const attachImage = true;
+
         const statusIndicator = document.querySelector('#statusIndicator span');
-        const eventList = document.getElementById('eventList');
-
-        // Load saved values
-        if (localStorage.getItem('ws_url')) wsUrlInput.value = localStorage.getItem('ws_url');
-        if (localStorage.getItem('api_url')) apiUrlInput.value = localStorage.getItem('api_url');
-
-        const savedKey = localStorage.getItem('ws_api_key');
-        if (savedKey) {
-            apiKeyInput.value = savedKey;
-        } else {
-            apiKeyInput.value = 'DEMO-API-KEY';
-        }
-
-        if (localStorage.getItem('ws_attach_image')) {
-            attachImageInput.checked = localStorage.getItem('ws_attach_image') === 'true';
-        }
+        const statusText = document.getElementById('statusText');
 
         function updateStatus(status, color) {
             statusText.innerText = status;
-            statusIndicator.className = `w-2 h-2 rounded-full bg-${color}-500 ${status === 'Connecting...' ? 'animate-pulse' : ''}`;
-
-            if (status === 'Connected') {
-                connectBtn.classList.add('hidden');
-                disconnectBtn.classList.remove('hidden');
-                wsUrlInput.disabled = true;
-                apiUrlInput.disabled = true;
-                apiKeyInput.disabled = true;
-                attachImageInput.disabled = true;
-            } else {
-                connectBtn.classList.remove('hidden');
-                disconnectBtn.classList.add('hidden');
-                wsUrlInput.disabled = false;
-                apiUrlInput.disabled = false;
-                apiKeyInput.disabled = false;
-                attachImageInput.disabled = false;
-            }
-        }
-
-        function addEventToList(eventStr, type = 'info', hasImage = false) {
-            const el = document.createElement('div');
-            el.className = `p-2 rounded bg-gray-700 text-xs border-l-2 custom-event-item`;
-
-            let colorClass = 'border-gray-500';
-            if (type === 'vote') colorClass = 'border-blue-500';
-            if (type === 'favourite') colorClass = 'border-pink-500';
-            if (type === 'upload') colorClass = 'border-green-500';
-
-            el.classList.add(colorClass);
-
-            const time = new Date().toLocaleTimeString();
-            let content = `<span class="text-gray-400 font-mono mr-1">${time}</span> ${eventStr}`;
-
-            if (hasImage) {
-                content += ` <span class="text-xs bg-orange-900 text-orange-200 px-1 rounded ml-1">IMG</span>`;
-            }
-
-            el.innerHTML = content;
-
-            eventList.prepend(el);
-            if (eventList.children.length > 20) {
-                eventList.lastElementChild.remove();
-            }
+            statusIndicator.className = `w-3 h-3 rounded-full bg-${color}-500 ${status === 'Connecting...' ? 'animate-pulse' : ''}`;
         }
 
         function createMapMarker(lat, lng, eventName, countryCode, data) {
@@ -469,7 +343,6 @@
 
             L.popup({
                 closeButton: false,
-                // autoClose: false, // Removed to allow default behavior (closing other popups)
                 closeOnClick: false,
                 className: 'custom-popup'
             })
@@ -477,7 +350,7 @@
                 .setContent(popupContent)
                 .openOn(map);
 
-            // Auto close after 5 seconds to allow seeing the image
+            // Auto close after 5 seconds
             popupTimer = setTimeout(() => {
                 map.closePopup();
                 popupTimer = null;
@@ -485,30 +358,11 @@
         }
 
         function connect() {
-            const url = wsUrlInput.value;
-            let apiKey = apiKeyInput.value;
-            const attachImage = attachImageInput.checked;
-
-            if (!apiKey) {
-                apiKey = 'DEMO-API-KEY';
-                apiKeyInput.value = apiKey;
-            }
-
-            if (!url) {
-                alert('Please provide URL');
-                return;
-            }
-
-            localStorage.setItem('ws_url', url);
-            localStorage.setItem('api_url', apiUrlInput.value);
-            localStorage.setItem('ws_api_key', apiKey);
-            localStorage.setItem('ws_attach_image', attachImage);
-
             if (socket) socket.disconnect();
 
             updateStatus('Connecting...', 'yellow');
 
-            socket = io(url, {
+            socket = io(wsUrl, {
                 transports: ['websocket'],
                 auth: {
                     'x-api-key': apiKey,
@@ -522,39 +376,29 @@
 
             socket.on('connect', () => {
                 updateStatus('Connected', 'green');
-                addEventToList('Connected to WebSocket Gateway');
-                if (eventList.querySelector('.italic')) eventList.innerHTML = '';
+                console.log('Connected to WebSocket Gateway');
             });
 
             socket.on('connect_error', (err) => {
                 updateStatus('Error', 'red');
-                addEventToList(`Connection Error: ${err.message}`);
+                console.error(`Connection Error: ${err.message}`);
             });
 
             socket.on('disconnect', () => {
                 updateStatus('Disconnected', 'gray');
-                addEventToList('Disconnected');
+                console.log('Disconnected');
             });
 
             socket.onAny((eventName, data) => {
                 let countryCode = null;
-                let hasImage = false;
 
                 if (data && data._metadata.country_code) countryCode = data._metadata.country_code;
                 if (!countryCode && data && data.sub_id) {
-                    // Sometimes sub_id might be used for testing country? Unlikely but fallback
+                    // Fallback logic if needed
                 }
                 if (data._metadata.event_type) {
                     eventName = data._metadata.event_type;
                 }
-
-                if (!countryCode && data && data.sub_id) { }
-
-                if (data && data.image) {
-                    hasImage = true;
-                }
-
-                addEventToList(`Event: <b>${eventName}</b> ${countryCode ? `(${countryCode})` : ''}`, eventName, hasImage);
 
                 if (countryCode) {
                     const coords = countryCentroids[countryCode.toUpperCase()];
@@ -567,85 +411,9 @@
             });
         }
 
-        function disconnect() {
-            if (socket) socket.disconnect();
-        }
+        // Auto-connect on load
+        window.addEventListener('load', connect);
 
-        // --- Trigger Fake Event ---
-        async function triggerFakeEvent() {
-            const apiUrl = apiUrlInput.value.replace(/\/$/, ''); // Remove trailing slash
-            const apiKey = apiKeyInput.value || 'DEMO-API-KEY';
-
-            triggerEventBtn.disabled = true;
-            triggerStatus.classList.remove('hidden');
-            triggerStatus.innerHTML = '<span class="text-yellow-400">⏳ Fetching random image...</span>';
-
-            try {
-                // Step 1: Get a random image from /images/search
-                const imageResponse = await fetch(`${apiUrl}/images/search?limit=1`, {
-                    headers: {
-                        'x-api-key': apiKey
-                    }
-                });
-
-                if (!imageResponse.ok) {
-                    throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
-                }
-
-                const images = await imageResponse.json();
-
-                if (!images || images.length === 0) {
-                    throw new Error('No images returned from search');
-                }
-
-                const imageId = images[0].id;
-                triggerStatus.innerHTML = `<span class="text-blue-400">📷 Got image: ${imageId}. Creating vote...</span>`;
-
-                // Step 2: Create an upvote for the image via POST /votes
-                const voteResponse = await fetch(`${apiUrl}/votes`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': apiKey
-                    },
-                    body: JSON.stringify({
-                        image_id: imageId,
-                        value: 1, // Upvote
-                        sub_id: 'map-events-demo'
-                    })
-                });
-
-                if (!voteResponse.ok) {
-                    const errorText = await voteResponse.text();
-                    throw new Error(`Failed to create vote: ${voteResponse.status} - ${errorText}`);
-                }
-
-                const vote = await voteResponse.json();
-                triggerStatus.innerHTML = `<span class="text-green-400">✅ Vote created! ID: ${vote.id || 'success'}</span>`;
-
-                // Add to local event list
-                addEventToList(`Triggered vote for image: <b>${imageId}</b>`, 'vote', true);
-
-            } catch (error) {
-                console.error('Trigger event error:', error);
-                triggerStatus.innerHTML = `<span class="text-red-400">❌ Error: ${error.message}</span>`;
-                addEventToList(`Trigger failed: ${error.message}`, 'info', false);
-            } finally {
-                triggerEventBtn.disabled = false;
-                // Hide status after 5 seconds
-                setTimeout(() => {
-                    triggerStatus.classList.add('hidden');
-                }, 5000);
-            }
-        }
-
-        // --- Auto-connect on page load ---
-        window.addEventListener('DOMContentLoaded', () => {
-            // Small delay to ensure everything is loaded
-            setTimeout(() => {
-                connect();
-            }, 500);
-        });
     </script>
 </body>
 
