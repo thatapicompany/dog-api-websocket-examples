@@ -4,15 +4,15 @@ This project demonstrates how to connect to the **The Dog API / The Cat API** We
 
 ## Live links to test
 
-- Map: https://live.thedogapi.com/map-events.html
+- Map: https://live.thedogapi.com/
 - Favourite or Vote Up/Don images to see them live on the above Map: https://thedogapi.com/en/students
 
 ## 📂 Project Structure
 
-- **`index.html`**  
+- **`map.html`**  
   A simplified, full-screen map experience. It automatically connects to the WebSocket gateway on load and displays events on a global map.
 
-- **`map-events.html`**  
+- **`index.html`**  
   An interactive version with a settings panel. You can manually configure the WebSocket URL, API Key, and toggle image attachments. It also includes a scrolling event log alongside the map.
 
 - **`events.html`**  
