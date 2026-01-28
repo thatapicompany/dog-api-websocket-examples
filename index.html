@@ -477,11 +477,11 @@
                 .setContent(popupContent)
                 .openOn(map);
 
-            // Auto close after 5 seconds to allow seeing the image
+            // Auto close after 20 seconds to allow seeing the image
             popupTimer = setTimeout(() => {
                 map.closePopup();
                 popupTimer = null;
-            }, 5000);
+            }, 20000);
         }
 
         function connect() {
